@@ -1,64 +1,69 @@
-# gitlab-nginx - GitLab CE with external Nginx and Let's Encrypt
+# nginx-config - Expandable nginx configuration profiles
 
-![Version](https://img.shields.io/badge/Version-2.5.3-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.0.0-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
-[![Stars](https://img.shields.io/github/stars/Wilgat/gitlab-nginx?style=flat-square)](https://github.com/Wilgat/gitlab-nginx)
+[![Stars](https://img.shields.io/github/stars/cloudgen/nginx-conf?style=flat-square)](https://github.com/cloudgen/nginx-conf)
 [![Shell](https://img.shields.io/badge/Shell-POSIX%20sh-orange?style=flat-square)]()
 
-You put one program file (`gitlab-nginx`) on a Linux server, then run `sudo gitlab-nginx run` so **GitLab Community Edition** sits behind **Nginx you control**, with free **Let's Encrypt** certificates.
+You put one program file (`nginx-config`) on a Linux box, install it as yourself, then pick a **named nginx profile**. Local copies keep placeholders (`{{domain-name}}`, `{{cert-file-location}}`, `{{cert-key-location}}`) so nothing is frozen to one host.
+
+This project started as **gitlab-nginx** and had every GitLab-only feature removed. It does **not** install GitLab.
 
 | Who | Meaning | Example |
 |-----|---------|---------|
-| **You** | A person with a domain pointing at the server. You can install this program as yourself. Full GitLab setup needs a root login. | `curl … \| sh` then `sudo gitlab-nginx run` |
-| **The other role** | After setup, dedicated accounts `nginx-adm` and `gitlab-adm` own day-to-day Nginx/GitLab files — not your daily login. | `remove-lpu` tears those accounts down |
-| **Not this** | GitLab’s bundled Nginx, a package-manager-only GitLab install, or a numbered main menu. Empty `gitlab-nginx` means **install this program**, not “set up GitLab”. | `gitlab-nginx` with no arguments |
+| **You** | A person who wants nginx site conf from a catalog. You can install this program as yourself. | `curl … \| sh` then `nginx-config` |
+| **The other role** | Root copies a rendered `{{domain-name}}.conf` into nginx, or removes `nginx-adm`. | `sudo nginx-config apply example.com` |
+| **Not this** | GitLab CE, `gitlab-adm`, or a one-shot “setup GitLab” command. Empty `nginx-config` after install is the **numbered list**, not GitLab. | `nginx-config` with no arguments (already installed, terminal) |
 
 | Includes | Excludes |
 |----------|----------|
-| External Nginx, Certbot standalone certificates, Cloudflare-aware SSH hostname | Using GitLab’s bundled Nginx as the public server |
-| Install for yourself (`~/.local/bin`) or for everyone (`/usr/local/bin`) | Treating empty argv as help or as full GitLab setup |
+| Three expandable profiles plus a shared Cloudflare map | GitLab Omnibus, `gitlab.rb`, GitLab SSH hostname |
+| Install for yourself (`~/.local/bin`) or for everyone (`/usr/local/bin`) | Treating empty argv as help |
 | Automatic SHA-256 companion check on download | Requiring a `CHECKSUM=` pin for every install |
 
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
-| Install the program | Downloads `gitlab-nginx` and places it on your PATH. Does **not** install GitLab yet. | `curl -fsSL https://raw.githubusercontent.com/Wilgat/gitlab-nginx/main/gitlab-nginx \| sh` |
-| Set up GitLab | Interactive 13-step host setup (packages, certificates, GitLab, external Nginx). Needs a terminal and root. | `sudo gitlab-nginx run` |
-| Inspect later | Show saved domains, email, or diagnostics without re-running setup. | `gitlab-nginx about` · `gitlab-nginx domains` |
+| Install the program | Downloads `nginx-config` and places it on your PATH. Seeds local profiles with placeholders. | `curl -fsSL https://raw.githubusercontent.com/cloudgen/nginx-conf/main/nginx-config \| sh` |
+| Open the numbered list | After install, on a real terminal, no arguments opens the list. A wrong number asks again. | `nginx-config` |
+| Render a profile | Fill domain and cert paths; catalog files stay unfilled. | `nginx-config nginx-conf` |
 
 This project follows [CIAO](https://github.com/cloudgen/ciao) (Caution • Intentional • Anti-fragile • Over-engineered).
 
 ## Features
 
 - **Self-installing program file** — user-local (`~/.local/bin`) or global (`/usr/local/bin`)
-- **Automatic SHA-256 companion check** — the program fetches `gitlab-nginx.sha256` itself (no env pin required)
-- **Dedicated operator accounts** after setup: `nginx-adm` (external Nginx) and `gitlab-adm` (GitLab config under `/etc/gitlab-adm`)
-- **`remove-lpu`** — remove those dedicated accounts (`userdel -r`); this is not “uninstall the CLI”
-- **External Nginx** you control (Cloudflare-friendly real-IP map unless `--no-cloudflare`)
-- **Let's Encrypt** via standalone mode before GitLab is brought up
-- **Separate GitLab SSH hostname** when the web domain is Cloudflare-proxied (port 22)
-- **Safe to re-run** install and ensure-style steps
+- **Automatic SHA-256 companion check** — the program fetches `nginx-config.sha256` itself (no env pin required)
+- **Numbered list** on a real terminal after install (`menu` / `main` are the same list)
+- **Retry on a wrong choice** at every menu layer
+- **Expandable profiles** stored under `~/.local/nginx-config/profiles/` with placeholders kept:
+  - `cloudflared-protected-host`
+  - `all-redirected`
+  - `excluded-non-cloudflared-ip`
+- **Render** a profile to `~/.local/nginx-config/rendered/{{domain-name}}.conf`
+- **`apply`** (root) writes that file into nginx `sites-available`
+- **`remove-lpu`** removes dedicated `nginx-adm` only
 - **Idempotent CLI lifecycle** — `version-check`, `self-update`, `self-uninstall`
 
 ## Quick Installation
 
-Install the program (does not install GitLab):
+Install the program:
 
 ```bash
-# For yourself → ~/.local/bin/gitlab-nginx
-curl -fsSL https://raw.githubusercontent.com/Wilgat/gitlab-nginx/main/gitlab-nginx | sh
+# For yourself → ~/.local/bin/nginx-config
+curl -fsSL https://raw.githubusercontent.com/cloudgen/nginx-conf/main/nginx-config | sh
 ```
 
 ```bash
-# For everyone → /usr/local/bin/gitlab-nginx
-sudo curl -fsSL https://raw.githubusercontent.com/Wilgat/gitlab-nginx/main/gitlab-nginx | sudo sh
+# For everyone → /usr/local/bin/nginx-config
+sudo curl -fsSL https://raw.githubusercontent.com/cloudgen/nginx-conf/main/nginx-config | sudo sh
 ```
 
 The channel URL is the product default (`SCRIPT_URL`). Override that env only if you fork the channel.
 
 ### Integrity (automatic SHA-256)
 
-When you do **not** set `CHECKSUM`, the program downloads the companion digest itself from `${SCRIPT_URL}.sha256` (in-repo file: `gitlab-nginx.sha256`). Human mode is designed to show the **link** (companion URL), the **value** (expected digest), and the **result**.
+When you do **not** set `CHECKSUM`, the program downloads the companion digest itself from `${SCRIPT_URL}.sha256` (in-repo file: `nginx-config.sha256`). Human mode is designed to show the **link** (companion URL), the **value** (expected digest), and the **result**.
 
 | Outcome | What happens |
 |---------|----------------|
@@ -68,92 +73,97 @@ When you do **not** set `CHECKSUM`, the program downloads the companion digest i
 
 Algorithm: **SHA-256** (`sha256sum`). Same-channel companion files prove the two files on that channel match. They are not a substitute for signed releases.
 
-### After install — set up GitLab
-
-Needs an interactive terminal and root:
-
-```bash
-sudo gitlab-nginx run
-```
-
-Empty `gitlab-nginx` (no arguments) only **installs or re-checks this program**. It does not start GitLab setup.
-
 ### Advanced: optional digest pin (CI)
 
-Optional process env — **not** listed in `help` / `about`, **not** the primary newcomer path. Paste the current `gitlab-nginx.sha256` hex (do not copy a stale hash from old docs):
+Optional process env — **not** listed in `help` / `about`. Paste the current `nginx-config.sha256` hex:
 
 ```bash
-CHECKSUM=<64-hex-from-gitlab-nginx.sha256> \
-  curl -fsSL https://raw.githubusercontent.com/Wilgat/gitlab-nginx/main/gitlab-nginx | sh
+CHECKSUM=<64-hex-from-nginx-config.sha256> \
+  curl -fsSL https://raw.githubusercontent.com/cloudgen/nginx-conf/main/nginx-config | sh
 ```
 
-Regenerate the in-repo companion after editing `./gitlab-nginx`: `sha256sum gitlab-nginx | cut -d' ' -f1 > gitlab-nginx.sha256`. Do not paste a same-origin `CHECKSUM=$(curl …sha256)` as “higher assurance” than automatic mode.
+Regenerate the in-repo companion after editing `./nginx-config`: `sha256sum nginx-config | cut -d' ' -f1 > nginx-config.sha256`.
+
+### After install — numbered list
+
+On a real terminal (already installed):
+
+```text
+$ nginx-config
+[INFO] **nginx-config**(*1.0.0*) — numbered list of live commands
+1. domains: Show saved domains
+2. profiles: List expandable nginx profiles
+3. nginx-conf: Render a profile with domain and cert paths
+4. apply: Write a rendered conf into nginx (root)
+5. remove-lpu: Remove dedicated nginx-adm account
+9. Exit
+Choice (number or command):
+```
+
+Choose a number, or type the command name. A wrong number asks again. `9` (or `exit` / `quit`) leaves the list. `nginx-config menu` (alias `main`) is the same list.
+
+Empty `nginx-config` in a script (no terminal) reports **already installed**. It does not hang.
 
 ## Usage
 
 ```text
-gitlab-nginx [command] [options]
+nginx-config [command] [options]
 ```
 
 | Command | Who may run it | What it does |
 |---------|----------------|--------------|
-| *(no arguments)* | You | Install or re-check this program |
-| `install` | You (root → global path) | Place the CLI binary |
+| *(no arguments)* | You | Not installed → install this program. Installed + terminal → numbered list. Installed + script → already installed |
+| `install` | You (root → global path) | Place the CLI binary; seed local profiles |
 | `version` | You | Print version |
-| `about` | You | Diagnostics (install + cache/persistence folders + domain files) |
+| `about` | You | Diagnostics (install + cache/persistence + profiles) |
 | `help` | You | Full usage |
 | `version-check` | You | Compare local vs channel version |
 | `self-update` | You | Update this program from the channel |
-| `self-uninstall` | You | Remove this program (not GitLab, not `nginx-adm`) |
-| `run` (alias `setup`) | Root | Full interactive GitLab + Nginx setup |
-| `domains` | You (read) | Show saved domains |
-| `email` | You (read) | Show saved Let's Encrypt email |
-| `ssh-hostname` | Root | Show or set GitLab SSH hostname |
-| `nginx-conf` | Root | Regenerate external Nginx config |
-| `remove-lpu` | Root | Remove dedicated `nginx-adm` / `gitlab-adm` accounts (`nginx` \| `gitlab` \| `all`) |
+| `self-uninstall` | You | Remove this program (not nginx, not `nginx-adm`) |
+| `menu` (alias `main`) | You | Same numbered list |
+| `domains` | You | Show saved domains |
+| `profiles` | You | List expandable profiles in local storage |
+| `nginx-conf` | You | Render a profile (domain + cert paths) |
+| `apply` | Root | Write rendered `{{domain-name}}.conf` into nginx |
+| `remove-lpu` | Root | Remove dedicated `nginx-adm` |
 
-**Global options:** `--quiet` / `-q`, `--json`, `--force`, `--debug`, `--no-cloudflare`
+**Global options:** `--quiet` / `-q`, `--json`, `--force`, `--debug`
 
 **Environment (listed in help):** `REPO_USER`, `REPO_NAME`, `SCRIPT_URL`. `CHECKSUM` is an install-path pin only — not a help/about field.
-
-There is **no numbered main menu**. Choose a command name (or a number is not offered).
 
 ## Examples
 
 ```bash
-gitlab-nginx version
-gitlab-nginx about
-gitlab-nginx --json about
-sudo gitlab-nginx run
-gitlab-nginx domains
-sudo gitlab-nginx nginx-conf
-sudo gitlab-nginx remove-lpu all --force
-gitlab-nginx help
+nginx-config version
+nginx-config about
+nginx-config --json about
+nginx-config profiles
+nginx-config nginx-conf all-redirected tcfg.example.test /etc/letsencrypt/live/tcfg.example.test/fullchain.pem /etc/letsencrypt/live/tcfg.example.test/privkey.pem
+sudo nginx-config apply tcfg.example.test
+sudo nginx-config remove-lpu --force
+nginx-config help
 ```
-
-Client SSH when the web domain is Cloudflare-proxied: the program prints a `~/.ssh/config` snippet at the end of interactive `run` (use the **SSH hostname**, not the proxied web domain, for `git@…`).
 
 ## Platform Compatibility
 
 | Surface | Status |
 |---------|--------|
-| Ubuntu 20.04 / 22.04 / 24.04 (fresh server) | Supported for full GitLab setup |
+| Ubuntu 20.04 / 22.04 / 24.04 | Supported for profile render + optional root apply |
 | Other Debian-based Linux with `/bin/sh`, `curl` or `wget`, `sha256sum` | CLI install and self-update |
-| Ports 80 and 443 reachable; DNS A/AAAA for your domains | Required for certificates + GitLab |
-| Termux / Git Bash / Windows Command Prompt | CLI self-install as yourself only — no GitLab host setup, no dedicated system users, no `sudo curl \| sh` |
-| macOS / non-Linux as a GitLab host | Not claimed |
+| Termux / Git Bash / Windows Command Prompt | CLI self-install as yourself only — no `apply`, no dedicated system users, no `sudo curl \| sh` |
+| macOS as an nginx origin host | Not claimed |
 
-Full setup needs a TTY. Non-interactive `run` only does package install + service stop and then tells you to run `sudo gitlab-nginx run` on a terminal.
+Full numbered list needs a TTY. Non-interactive `menu` shows help so scripts do not wait.
 
 ## Related Projects
 
 - [CIAO](https://github.com/cloudgen/ciao) — defensive programming philosophy this CLI follows
-- [selfmanaged](https://github.com/cloudgen/selfmanaged) — Type 0 bootstrap this product specialized from (install / version-check / self-update / self-uninstall)
-- Independent review notes: [RECOMMENDATION.md](RECOMMENDATION.md)
+- [selfmanaged](https://github.com/cloudgen/selfmanaged) — Type 0 bootstrap this product specialized from
+- Origin DNA: gitlab-nginx (GitLab features stripped)
 
 ## Contributing
 
-Contributions are welcome. Open an issue or a pull request. Keep install, checksum, and privilege behavior honest in `README.md` and `CHANGELOG.md` when you change them.
+Contributions are welcome. Open an issue or a pull request. Keep install, checksum, profile placeholders, and privilege behavior honest in `README.md` and `CHANGELOG.md` when you change them.
 
 ## License
 
@@ -161,4 +171,4 @@ MIT License. See [LICENSE.md](LICENSE.md).
 
 ## Last Update
 
-2026-09-06 — **2.5.3**: `help` is a single live catalog (`app_help`); `setup` alias listed; stale Java/timer help removed.
+2026-09-13 — **1.0.0**: GitLab features stripped; 0-argv numbered list; expandable profiles `cloudflared-protected-host`, `all-redirected`, `excluded-non-cloudflared-ip` stored locally with placeholders.

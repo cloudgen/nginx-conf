@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-09-13
+
+### Added
+- **Numbered list** on interactive empty argv after install (`menu` / `main`); invalid choices re-prompt at every layer.
+- **Expandable profiles** in local persistence (`~/.local/nginx-config/profiles/`): `cloudflared-protected-host`, `all-redirected`, `excluded-non-cloudflared-ip`, plus shared `cloudflare-map`. Catalog copies keep `{{domain-name}}`, `{{cert-file-location}}`, `{{cert-key-location}}`.
+- Domain verbs: `domains`, `profiles`, `nginx-conf` (render), `apply` (root).
+- Product law: `requirement-domain-nginx-config`, `requirement-nginx-conf`, `requirement-shell-cli-default-interaction`.
+- Channel `cloudgen/nginx-conf`; ship unit `./nginx-config` **1.0.0**.
+
+### Removed
+- All GitLab-related features: GitLab CE install, `gitlab-adm`, `gitlab.rb`, `gitlab-ctl`, `ssh-hostname`, `run`/`setup` 13-step GitLab host setup, `email` Let's Encrypt host file, `remove-gitlab-adm`.
+
+### Changed
+- Empty argv: not installed → Type O install-ensure; installed + terminal → numbered list; installed + script → already-installed (no hang).
+- `remove-lpu` tears down **nginx-adm only**.
+- In-tool sudo allow table is empty (studied: no `sudo` wrap; `check_root` then direct tools).
+
 ## [2.5.3] - 2026-09-06
 
 ### Fixed

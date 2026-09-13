@@ -4,10 +4,8 @@
 
 | Version | Supported |
 |---------|-----------|
-| **2.5.3** (current) | Yes — full support |
-| **2.5.2** / **2.5.1** / **2.5.0** / **2.4.x** | Superseded; upgrade to current when possible |
-| **2.3.x** | Security fixes only; upgrade recommended |
-| **2.2.x** and older | Best-effort only; upgrade recommended |
+| **1.0.0** (current) | Yes — full support |
+| **2.5.x** gitlab-nginx lineage | Historical origin only; this product is nginx-config |
 
 ## Reporting a Vulnerability
 
@@ -29,9 +27,9 @@ This project follows **[CIAO](https://github.com/cloudgen/ciao)** / **CIAO-Lite*
 | Letter | Principle | Security application |
 |--------|-----------|----------------------|
 | **C** | **Caution** | Assume hostile input, hostile networks, and misconfiguration. Validate install paths and privilege boundaries; fail closed on integrity **mismatch** when a companion digest is present. Domain host setup requires root deliberately. |
-| **I** | **Intentional** | Self-management as yourself, channel URL (`SCRIPT_URL`), automatic companion-checksum, and domain verbs (`run`, `nginx-conf`, `remove-lpu`, …) are deliberate. Prefer clear “why” over silent magic. |
+| **I** | **Intentional** | Self-management as yourself, channel URL (`SCRIPT_URL`), automatic companion-checksum, and domain verbs (`profiles`, `nginx-conf`, `apply`, `remove-lpu`) are deliberate. Prefer clear “why” over silent magic. |
 | **A** | **Anti-fragile** | Survive harsh environments (minimal containers, non-interactive `curl \| sh`). Prefer transparent automatic SHA-256 sidecar checks, least privilege for day-to-day CLI use, and recoverable failure over brittle trust. |
-| **O** | **Over-protect** | Defense in depth on critical paths (integrity verify before install/update when designed, dual least-privilege `nginx-adm` / `gitlab-adm` models, loud failure). Do not “simplify away” safety for brevity. |
+| **O** | **Over-protect** | Defense in depth on critical paths (integrity verify before install/update when designed, profile placeholders never filled at seed, loud failure). Do not “simplify away” safety for brevity. |
 
 Full principles: [CIAO Defensive Programming](https://github.com/cloudgen/ciao) · agent contract: [CIAO-Lite](https://github.com/cloudgen/ciao-lite).
 

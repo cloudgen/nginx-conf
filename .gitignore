@@ -44,6 +44,9 @@ logs/
 *.pid
 *.seed
 
+# --- Assemble scratch (not the ship unit) ---
+.build/
+
 # --- Generic compiled / package outputs (defense in depth) ---
 build/
 dist/

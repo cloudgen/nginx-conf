@@ -1,175 +1,177 @@
 # =============================================================================
-# tests/test_domain.sh — gitlab-nginx domain surface (RQ-DOMAIN-GITLAB-NGINX)
+# tests/test_domain.sh — nginx-config domain surface (RQ-DOMAIN-NGINX-CONFIG)
 # =============================================================================
-# Host-mutating run/nginx-conf need root; this suite proves dispatch, help,
-# about domain rows, empty-argv ≠ domain run, and read-only domains behavior.
+# Proves help/about domain rows, GitLab verbs gone, profile seed/placeholders,
+# render, off-TTY menu = help, apply/remove-lpu non-root fail-closed.
 # =============================================================================
 
 # shellcheck source=helpers.sh
 . "${TESTS_ROOT}/helpers.sh"
 
 run_test_domain() {
-    t_header "Domain surface (TP-GLN-*)"
+    t_header "Domain surface (TP-NGINX-CONFIG-*)"
 
     require_cmd sh
 
-    # --- TP-GLN-01: help lists domain verbs + Type 0 + --no-cloudflare ---
+    # --- TP-NGINX-CONFIG-01: help lists work verbs + Type 0; no GitLab ---
     _out=$(sh "${SCRIPT}" help 2>/dev/null)
     _ec=$?
-    assert_eq "TP-GLN-01 help exit 0" 0 "$_ec"
-    assert_contains "TP-GLN-01 help lists run" "$_out" "run"
-    assert_contains "TP-GLN-01 help lists setup as Alias: run" "$_out" "Alias: run"
-    assert_contains "TP-GLN-01 help lists domains" "$_out" "domains"
-    assert_contains "TP-GLN-01 help lists email" "$_out" "email"
-    assert_contains "TP-GLN-01 help lists nginx-conf" "$_out" "nginx-conf"
-    assert_contains "TP-GLN-01 help lists ssh-hostname" "$_out" "ssh-hostname"
-    assert_contains "TP-GLN-01 help lists remove-lpu" "$_out" "remove-lpu"
-    assert_contains "TP-GLN-01 help lists --no-cloudflare" "$_out" "--no-cloudflare"
-    assert_contains "TP-GLN-01 help still lists install" "$_out" "install"
-    assert_contains "TP-GLN-01 help still lists self-update" "$_out" "self-update"
-    assert_not_contains "TP-GLN-01 help must not list Java" "$_out" "Java"
-    assert_not_contains "TP-GLN-01 help must not list Maven" "$_out" "Maven"
-    assert_not_contains "TP-GLN-01 help must not list timer uninstall" "$_out" "Remove timer"
-    assert_not_contains "TP-GLN-01 help must not list pom.xml" "$_out" "pom.xml"
-    assert_contains "TP-GLN-01 help lists --reset as --force" "$_out" "--reset"
+    assert_eq "TP-NGINX-CONFIG-01 help exit 0" 0 "$_ec"
+    assert_contains "TP-NGINX-CONFIG-01 help lists domains" "$_out" "domains"
+    assert_contains "TP-NGINX-CONFIG-01 help lists profiles" "$_out" "profiles"
+    assert_contains "TP-NGINX-CONFIG-01 help lists nginx-conf" "$_out" "nginx-conf"
+    assert_contains "TP-NGINX-CONFIG-01 help lists apply" "$_out" "apply"
+    assert_contains "TP-NGINX-CONFIG-01 help lists remove-lpu" "$_out" "remove-lpu"
+    assert_contains "TP-NGINX-CONFIG-01 help lists menu" "$_out" "menu"
+    assert_contains "TP-NGINX-CONFIG-01 help still lists install" "$_out" "install"
+    assert_contains "TP-NGINX-CONFIG-01 help still lists self-update" "$_out" "self-update"
+    assert_contains "TP-NGINX-CONFIG-01 help lists --reset as --force" "$_out" "--reset"
+    assert_not_contains "TP-NGINX-CONFIG-01 help must not list ssh-hostname" "$_out" "ssh-hostname"
+    assert_not_contains "TP-NGINX-CONFIG-01 help must not list GitLab CE" "$_out" "GitLab CE"
+    assert_not_contains "TP-NGINX-CONFIG-01 help must not list gitlab-adm" "$_out" "gitlab-adm"
+    assert_not_contains "TP-NGINX-CONFIG-01 help must not list Alias: run" "$_out" "Alias: run"
 
-    # --- TP-GLN-02: help --json mentions domain note surface ---
+    # --- TP-NGINX-CONFIG-02: help --json mentions domain note surface ---
     _out=$(sh "${SCRIPT}" --json help 2>/dev/null)
     _ec=$?
-    assert_eq "TP-GLN-02 help --json exit 0" 0 "$_ec"
-    assert_contains "TP-GLN-02 help --json success" "$_out" '"type":"success"'
-    assert_contains "TP-GLN-02 help --json notes domains" "$_out" "domains"
-    assert_contains "TP-GLN-02 help --json notes ssh-hostname" "$_out" "ssh-hostname"
-    assert_contains "TP-GLN-02 help --json notes setup" "$_out" "setup"
+    assert_eq "TP-NGINX-CONFIG-02 help --json exit 0" 0 "$_ec"
+    assert_contains "TP-NGINX-CONFIG-02 help --json success" "$_out" '"type":"success"'
+    assert_contains "TP-NGINX-CONFIG-02 help --json notes domains" "$_out" "domains"
+    assert_contains "TP-NGINX-CONFIG-02 help --json notes nginx-conf" "$_out" "nginx-conf"
+    assert_contains "TP-NGINX-CONFIG-02 help --json notes profiles" "$_out" "profiles"
+    assert_not_contains "TP-NGINX-CONFIG-02 help --json no ssh-hostname" "$_out" "ssh-hostname"
 
-    # --- TP-GLN-03: about JSON domain fields ---
+    # --- TP-NGINX-CONFIG-03: about JSON domain fields ---
     _out=$(sh "${SCRIPT}" --json about 2>/dev/null)
     _ec=$?
-    assert_eq "TP-GLN-03 about --json exit 0" 0 "$_ec"
-    assert_contains "TP-GLN-03 about type" "$_out" '"type":"about"'
-    assert_contains "TP-GLN-03 about domains_file" "$_out" '"domains_file"'
-    assert_contains "TP-GLN-03 about email_file" "$_out" '"email_file"'
-    assert_contains "TP-GLN-03 about domain_count" "$_out" '"domain_count"'
-    assert_contains "TP-GLN-03 about domain product" "$_out" '"domain":"gitlab-nginx"'
+    assert_eq "TP-NGINX-CONFIG-03 about --json exit 0" 0 "$_ec"
+    assert_contains "TP-NGINX-CONFIG-03 about type" "$_out" '"type":"about"'
+    assert_contains "TP-NGINX-CONFIG-03 about domains_file" "$_out" '"domains_file"'
+    assert_contains "TP-NGINX-CONFIG-03 about profiles_dir" "$_out" '"profiles_dir"'
+    assert_contains "TP-NGINX-CONFIG-03 about domain_count" "$_out" '"domain_count"'
+    assert_contains "TP-NGINX-CONFIG-03 about domain product" "$_out" '"domain":"nginx-config"'
+    assert_not_contains "TP-NGINX-CONFIG-03 about no email_file" "$_out" '"email_file"'
 
-    # --- TP-GLN-04: empty argv is Type O install-ensure, NOT domain run ---
-    # When already not forcing network: use isolated env + bad SCRIPT_URL → non-zero,
-    # and must not invoke interactive domain setup banners (Certbot / GitLab CE).
+    # --- TP-NGINX-CONFIG-04: empty argv is Type O install-ensure, NOT apply ---
     ci_isolated_env
     _errf="${CI_HOME}/empty-arg-err.txt"
     _out=$(
         HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" GLOBAL_BIN="${CI_GLOBAL_BIN}" \
-        SCRIPT_URL="http://127.0.0.1:1/gitlab-nginx-unreachable" \
+        SCRIPT_URL="http://127.0.0.1:1/nginx-config-unreachable" \
         sh "${SCRIPT}" </dev/null 2>"${_errf}"
     )
     _ec=$?
     _err=$(cat "${_errf}" 2>/dev/null || true)
     _all="${_out}${_err}"
     if [ "$_ec" -ne 0 ]; then
-        t_pass "TP-GLN-04 empty argv failed install exits non-zero (Type O)"
+        t_pass "TP-NGINX-CONFIG-04 empty argv failed install exits non-zero (Type O)"
     else
-        t_fail "TP-GLN-04 empty argv expected non-zero without channel, got 0"
+        t_fail "TP-NGINX-CONFIG-04 empty argv expected non-zero without channel, got 0"
     fi
-    assert_not_contains "TP-GLN-04 empty argv must not start GitLab install text" "$_all" "Installing GitLab"
-    assert_not_contains "TP-GLN-04 empty argv must not run certbot standalone" "$_all" "certbot certonly"
-    assert_file_missing "TP-GLN-04 empty argv left no binary" "${CI_USER_BIN}/gitlab-nginx"
+    assert_not_contains "TP-NGINX-CONFIG-04 empty argv must not start GitLab install text" "$_all" "Installing GitLab"
+    assert_not_contains "TP-NGINX-CONFIG-04 empty argv must not apply nginx" "$_all" "sites-available"
+    assert_file_missing "TP-NGINX-CONFIG-04 empty argv left no binary" "${CI_USER_BIN}/nginx-config"
     ci_cleanup_env
 
-    # --- TP-GLN-05: domains command is routed (not unknown) ---
-    # May succeed (readable domains file) or warn; must not be "Unknown command".
+    # --- TP-NGINX-CONFIG-05: profiles seeds catalog with placeholders ---
+    ci_isolated_env
+    _errf="${CI_HOME}/prof-err.txt"
+    _out=$(
+        HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" GLOBAL_BIN="${CI_GLOBAL_BIN}" \
+        sh "${SCRIPT}" profiles 2>"${_errf}"
+    )
+    _ec=$?
+    _err=$(cat "${_errf}" 2>/dev/null || true)
+    assert_eq "TP-NGINX-CONFIG-05 profiles exit 0" 0 "$_ec"
+    assert_contains "TP-NGINX-CONFIG-05 lists cloudflared-protected-host" "${_out}${_err}" "cloudflared-protected-host"
+    assert_contains "TP-NGINX-CONFIG-05 lists all-redirected" "${_out}${_err}" "all-redirected"
+    assert_contains "TP-NGINX-CONFIG-05 lists excluded-non-cloudflared-ip" "${_out}${_err}" "excluded-non-cloudflared-ip"
+    _pdir="${CI_HOME}/.local/nginx-config/profiles"
+    assert_file_exists "TP-NGINX-CONFIG-05 seeded cloudflared-protected-host" "${_pdir}/cloudflared-protected-host.conf"
+    assert_file_exists "TP-NGINX-CONFIG-05 seeded all-redirected" "${_pdir}/all-redirected.conf"
+    assert_file_exists "TP-NGINX-CONFIG-05 seeded excluded-non-cloudflared-ip" "${_pdir}/excluded-non-cloudflared-ip.conf"
+    for _n in cloudflared-protected-host all-redirected excluded-non-cloudflared-ip; do
+        _body=$(cat "${_pdir}/${_n}.conf")
+        assert_contains "TP-NGINX-CONFIG-05 ${_n} keeps {{domain-name}}" "$_body" "{{domain-name}}"
+        assert_contains "TP-NGINX-CONFIG-05 ${_n} keeps {{cert-file-location}}" "$_body" "{{cert-file-location}}"
+        assert_contains "TP-NGINX-CONFIG-05 ${_n} keeps {{cert-key-location}}" "$_body" "{{cert-key-location}}"
+        assert_not_contains "TP-NGINX-CONFIG-05 ${_n} no live example.com fill" "$_body" "example.com"
+    done
+    ci_cleanup_env
+
+    # --- TP-NGINX-CONFIG-06: off-TTY menu is help (no hang) ---
     _errf=$(mktemp)
-    _out=$(sh "${SCRIPT}" domains 2>"${_errf}")
+    _out=$(sh "${SCRIPT}" menu </dev/null 2>"${_errf}")
     _ec=$?
     _err=$(cat "${_errf}" 2>/dev/null || true)
     rm -f "${_errf}"
-    assert_not_contains "TP-GLN-05 domains not unknown command" "${_out}${_err}" "Unknown command"
-    # exit 0 typical when file readable; allow non-zero only for permission paths without crash
-    if [ "$_ec" -eq 0 ] || [ "$_ec" -eq 1 ]; then
-        t_pass "TP-GLN-05 domains exits 0 or 1 (routed)"
-    else
-        t_fail "TP-GLN-05 domains unexpected exit ${_ec}"
-    fi
+    assert_eq "TP-NGINX-CONFIG-06 menu off-TTY exit 0" 0 "$_ec"
+    assert_contains "TP-NGINX-CONFIG-06 menu off-TTY shows help usage" "${_out}${_err}" "Usage:"
+    assert_not_contains "TP-NGINX-CONFIG-06 menu off-TTY not Choice prompt" "${_out}${_err}" "Choice (number or command)"
 
-    # --- TP-GLN-06: domains --json produces JSON object when possible ---
+    # --- TP-NGINX-CONFIG-07: nginx-conf non-TTY without operands fails closed ---
+    ci_isolated_env
+    _errf="${CI_HOME}/nc-err.txt"
+    _out=$(
+        HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" GLOBAL_BIN="${CI_GLOBAL_BIN}" \
+        sh "${SCRIPT}" nginx-conf </dev/null 2>"${_errf}"
+    )
+    _ec=$?
+    _err=$(cat "${_errf}" 2>/dev/null || true)
+    assert_eq "TP-NGINX-CONFIG-07 nginx-conf missing operands exit 1" 1 "$_ec"
+    assert_not_contains "TP-NGINX-CONFIG-07 nginx-conf not unknown" "${_out}${_err}" "Unknown command"
+    assert_contains "TP-NGINX-CONFIG-07 nginx-conf Next:" "${_out}${_err}" "Next:"
+    ci_cleanup_env
+
+    # --- TP-NGINX-CONFIG-08: nginx-conf render keeps catalog placeholders ---
+    ci_isolated_env
+    _errf="${CI_HOME}/render-err.txt"
+    _syn="tcfg$(($$ % 10000)).example.test"
+    _out=$(
+        HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" GLOBAL_BIN="${CI_GLOBAL_BIN}" \
+        sh "${SCRIPT}" --json nginx-conf all-redirected "${_syn}" /tmp/fullchain.pem /tmp/privkey.pem 2>"${_errf}"
+    )
+    _ec=$?
+    _err=$(cat "${_errf}" 2>/dev/null || true)
+    assert_eq "TP-NGINX-CONFIG-08 render exit 0" 0 "$_ec"
+    assert_contains "TP-NGINX-CONFIG-08 render json success" "${_out}${_err}" '"type":"success"'
+    _rendered="${CI_HOME}/.local/nginx-config/rendered/${_syn}.conf"
+    assert_file_exists "TP-NGINX-CONFIG-08 rendered file" "${_rendered}"
+    _rbody=$(cat "${_rendered}")
+    assert_contains "TP-NGINX-CONFIG-08 rendered has synthetic domain" "$_rbody" "${_syn}"
+    assert_contains "TP-NGINX-CONFIG-08 rendered 301" "$_rbody" "return 301"
+    _cat="${CI_HOME}/.local/nginx-config/profiles/all-redirected.conf"
+    _cbody=$(cat "${_cat}")
+    assert_contains "TP-NGINX-CONFIG-08 catalog still {{domain-name}}" "$_cbody" "{{domain-name}}"
+    assert_not_contains "TP-NGINX-CONFIG-08 catalog not filled with synthetic domain" "$_cbody" "${_syn}"
+    ci_cleanup_env
+
+    # --- TP-NGINX-CONFIG-09: apply without root fails closed ---
     _errf=$(mktemp)
-    _out=$(sh "${SCRIPT}" --json domains 2>"${_errf}")
+    _out=$(sh "${SCRIPT}" apply tcfg.example.test 2>"${_errf}")
     _ec=$?
     _err=$(cat "${_errf}" 2>/dev/null || true)
     rm -f "${_errf}"
-    _all="${_out}${_err}"
-    assert_not_contains "TP-GLN-06 domains --json not unknown" "$_all" "Unknown command"
-    case "$_all" in
-        *'"type":'*) t_pass "TP-GLN-06 domains --json emits type field" ;;
-        *)
-            # permission denied human path still acceptable if not unknown
-            case "$_all" in
-                *[Pp]ermission*|*denied*) t_pass "TP-GLN-06 domains --json permission-gated (honest)" ;;
-                *) t_fail "TP-GLN-06 domains --json no type/permission: $(_trunc "$_all")" ;;
-            esac
-            ;;
-    esac
+    assert_eq "TP-NGINX-CONFIG-09 apply non-root exit 1" 1 "$_ec"
+    assert_not_contains "TP-NGINX-CONFIG-09 apply not unknown" "${_out}${_err}" "Unknown command"
+    assert_contains "TP-NGINX-CONFIG-09 apply root required" "${_out}${_err}" "root"
 
-    # --- TP-GLN-07: nginx-conf without root fails closed (not unknown) ---
-    _errf=$(mktemp)
-    _out=$(sh "${SCRIPT}" nginx-conf 2>"${_errf}")
-    _ec=$?
-    _err=$(cat "${_errf}" 2>/dev/null || true)
-    rm -f "${_errf}"
-    _all="${_out}${_err}"
-    assert_eq "TP-GLN-07 nginx-conf non-root exit 1" 1 "$_ec"
-    assert_not_contains "TP-GLN-07 nginx-conf not unknown" "$_all" "Unknown command"
-    assert_contains "TP-GLN-07 nginx-conf root required" "$_all" "root"
-
-    # --- TP-GLN-08: run without root fails closed ---
-    _errf=$(mktemp)
-    # run may start non-interactive path; ensure not root path dies on check_root eventually
-    # Force non-TTY: </dev/null
-    _out=$(sh "${SCRIPT}" run </dev/null 2>"${_errf}")
-    _ec=$?
-    _err=$(cat "${_errf}" 2>/dev/null || true)
-    rm -f "${_errf}"
-    _all="${_out}${_err}"
-    assert_not_contains "TP-GLN-08 run not unknown command" "$_all" "Unknown command"
-    # Non-root non-interactive typically dies on root check during setup steps
-    if [ "$_ec" -ne 0 ]; then
-        t_pass "TP-GLN-08 run non-root exits non-zero"
-    else
-        # If somehow succeeds without root, still fail closed expectation
-        t_fail "TP-GLN-08 run non-root expected non-zero exit"
-    fi
-
-    # --- TP-GLN-11: email command is routed (not unknown) ---
-    _errf=$(mktemp)
-    _out=$(sh "${SCRIPT}" email 2>"${_errf}")
-    _ec=$?
-    _err=$(cat "${_errf}" 2>/dev/null || true)
-    rm -f "${_errf}"
-    assert_not_contains "TP-GLN-11 email not unknown command" "${_out}${_err}" "Unknown command"
-    if [ "$_ec" -eq 0 ] || [ "$_ec" -eq 1 ]; then
-        t_pass "TP-GLN-11 email exits 0 or 1 (routed)"
-    else
-        t_fail "TP-GLN-11 email unexpected exit ${_ec}"
-    fi
-
-    # --- TP-GLN-12: ssh-hostname without root fails closed ---
-    _errf=$(mktemp)
-    _out=$(sh "${SCRIPT}" ssh-hostname 2>"${_errf}")
-    _ec=$?
-    _err=$(cat "${_errf}" 2>/dev/null || true)
-    rm -f "${_errf}"
-    _all="${_out}${_err}"
-    assert_eq "TP-GLN-12 ssh-hostname non-root exit 1" 1 "$_ec"
-    assert_not_contains "TP-GLN-12 ssh-hostname not unknown" "$_all" "Unknown command"
-    assert_contains "TP-GLN-12 ssh-hostname root required" "$_all" "root"
-
-    # --- TP-GLN-13: remove-lpu without root fails closed ---
+    # --- TP-NGINX-CONFIG-10: remove-lpu without root fails closed ---
     _errf=$(mktemp)
     _out=$(sh "${SCRIPT}" remove-lpu 2>"${_errf}")
     _ec=$?
     _err=$(cat "${_errf}" 2>/dev/null || true)
     rm -f "${_errf}"
-    _all="${_out}${_err}"
-    assert_eq "TP-GLN-13 remove-lpu non-root exit 1" 1 "$_ec"
-    assert_not_contains "TP-GLN-13 remove-lpu not unknown" "$_all" "Unknown command"
-    assert_contains "TP-GLN-13 remove-lpu root required" "$_all" "root"
+    assert_eq "TP-NGINX-CONFIG-10 remove-lpu non-root exit 1" 1 "$_ec"
+    assert_not_contains "TP-NGINX-CONFIG-10 remove-lpu not unknown" "${_out}${_err}" "Unknown command"
+    assert_contains "TP-NGINX-CONFIG-10 remove-lpu root required" "${_out}${_err}" "root"
+
+    # --- TP-NGINX-CONFIG-11: unknown GitLab verbs fail closed ---
+    _errf=$(mktemp)
+    _out=$(sh "${SCRIPT}" ssh-hostname 2>"${_errf}")
+    _ec=$?
+    _err=$(cat "${_errf}" 2>/dev/null || true)
+    rm -f "${_errf}"
+    assert_eq "TP-NGINX-CONFIG-11 ssh-hostname unknown exit 1" 1 "$_ec"
+    assert_contains "TP-NGINX-CONFIG-11 ssh-hostname unknown command" "${_out}${_err}" "Unknown command"
 }

@@ -19,15 +19,15 @@ run_test_cli() {
     # --- syntax ---
     sh -n "${SCRIPT}"
     _syn=$?
-    assert_eq "sh -n gitlab-nginx (syntax)" 0 "$_syn"
+    assert_eq "sh -n nginx-config (syntax)" 0 "$_syn"
 
     # --- companion digest matches ship unit ---
-    if [ -f "${REPO_ROOT}/gitlab-nginx.sha256" ]; then
-        _expected=$(tr -d ' \n\r\t' < "${REPO_ROOT}/gitlab-nginx.sha256")
+    if [ -f "${REPO_ROOT}/nginx-config.sha256" ]; then
+        _expected=$(tr -d ' \n\r\t' < "${REPO_ROOT}/nginx-config.sha256")
         _actual=$(sha256sum "${SCRIPT}" | awk '{print $1}')
-        assert_eq "gitlab-nginx.sha256 matches ./gitlab-nginx" "$_expected" "$_actual"
+        assert_eq "nginx-config.sha256 matches ./nginx-config" "$_expected" "$_actual"
     else
-        t_fail "gitlab-nginx.sha256 missing at repo root"
+        t_fail "nginx-config.sha256 missing at repo root"
     fi
 
     # --- version (human) ---
@@ -35,14 +35,14 @@ run_test_cli() {
     _ec=$?
     assert_eq "version exit 0" 0 "$_ec"
     assert_contains "version human mentions version" "$_out" "${PRODUCT_VERSION}"
-    assert_contains "version human mentions app" "$_out" "gitlab-nginx"
+    assert_contains "version human mentions app" "$_out" "nginx-config"
 
     # --- version (json) ---
     _out=$(sh "${SCRIPT}" --json version 2>/dev/null)
     _ec=$?
     assert_eq "version --json exit 0" 0 "$_ec"
     assert_contains "version --json type" "$_out" '"type":"version"'
-    assert_contains "version --json app" "$_out" '"app":"gitlab-nginx"'
+    assert_contains "version --json app" "$_out" '"app":"nginx-config"'
     assert_contains "version --json version field" "$_out" "\"version\":\"${PRODUCT_VERSION}\""
     # app_version is the live dispatcher target (M1); no dual inline path
     assert_contains "version human via app_version" "$(sh "${SCRIPT}" version 2>/dev/null)" "${PRODUCT_VERSION}"
@@ -75,14 +75,14 @@ run_test_cli() {
     _ec=$?
     assert_eq "about --json exit 0" 0 "$_ec"
     assert_contains "about --json type" "$_out" '"type":"about"'
-    assert_contains "about --json app" "$_out" '"app":"gitlab-nginx"'
+    assert_contains "about --json app" "$_out" '"app":"nginx-config"'
     assert_not_contains "about --json must not include CHECKSUM" "$_out" "CHECKSUM"
     assert_contains "about --json effective_storage" "$_out" '"effective_storage"'
     assert_contains "about --json storage_dir" "$_out" '"storage_dir"'
     assert_contains "about --json cache_preferred" "$_out" '"cache_preferred"'
     assert_contains "about --json cache_fallback" "$_out" '"cache_fallback"'
     assert_contains "about --json persistence_storage" "$_out" '"persistence_storage"'
-    assert_contains "about --json storage includes app name" "$_out" "${APP_NAME:-gitlab-nginx}"
+    assert_contains "about --json storage includes app name" "$_out" "${APP_NAME:-nginx-config}"
     _out_h=$(sh "${SCRIPT}" about 2>/dev/null)
     assert_contains "about human Cache folder (preferred)" "$_out_h" "Cache folder (preferred):"
     assert_contains "about human Cache folder (fallback)" "$_out_h" "Cache folder (fallback):"
@@ -95,19 +95,19 @@ run_test_cli() {
     if [ -n "${CI_HOME:-}" ]; then
         _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN:-${CI_HOME}/.local/bin}" \
             sh "${SCRIPT}" --json about 2>/dev/null)
-        assert_contains "isolated about effective_storage has app" "$_out" "${APP_NAME:-gitlab-nginx}"
+        assert_contains "isolated about effective_storage has app" "$_out" "${APP_NAME:-nginx-config}"
         case "$_out" in
-            *'"effective_storage":"'*"${APP_NAME:-gitlab-nginx}"*) t_pass "effective_storage path contains ${APP_NAME:-gitlab-nginx}" ;;
+            *'"effective_storage":"'*"${APP_NAME:-nginx-config}"*) t_pass "effective_storage path contains ${APP_NAME:-nginx-config}" ;;
             *) t_fail "effective_storage missing app isolation in: $_out" ;;
         esac
         assert_contains "storage_dir field present under isolation" "$_out" '"storage_dir"'
         assert_contains "isolated about persistence_storage field" "$_out" '"persistence_storage"'
         case "$_out" in
-            *'"persistence_storage":"'"${CI_HOME}/.local/${APP_NAME:-gitlab-nginx}"'"'*) \
-                t_pass "persistence_storage is ${CI_HOME}/.local/${APP_NAME:-gitlab-nginx}" ;;
+            *'"persistence_storage":"'"${CI_HOME}/.local/${APP_NAME:-nginx-config}"'"'*) \
+                t_pass "persistence_storage is ${CI_HOME}/.local/${APP_NAME:-nginx-config}" ;;
             *) t_fail "persistence_storage missing isolated HOME/.local/app path in: $_out" ;;
         esac
-        _persist="${CI_HOME}/.local/${APP_NAME:-gitlab-nginx}"
+        _persist="${CI_HOME}/.local/${APP_NAME:-nginx-config}"
         if [ -d "$_persist" ]; then
             t_pass "persistence folder exists after resolve"
         else
@@ -186,7 +186,7 @@ run_test_cli() {
     _errf="${CI_HOME}/zero-arg-err.txt"
     _out=$(
         HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" GLOBAL_BIN="${CI_GLOBAL_BIN}" \
-        SCRIPT_URL="http://127.0.0.1:1/gitlab-nginx-unreachable" \
+        SCRIPT_URL="http://127.0.0.1:1/nginx-config-unreachable" \
         sh "${SCRIPT}" </dev/null 2>"${_errf}"
     )
     _ec=$?
@@ -196,7 +196,7 @@ run_test_cli() {
     else
         t_fail "zero-arg failed install expected non-zero exit, got 0 (stdout='$(_trunc "$_out")' err='$(_trunc "$_err")')"
     fi
-    assert_file_missing "zero-arg failed install left no binary" "${CI_USER_BIN}/gitlab-nginx"
+    assert_file_missing "zero-arg failed install left no binary" "${CI_USER_BIN}/nginx-config"
     ci_cleanup_env
 
     # --- self-uninstall --json without force when binary present (isolated) ---
@@ -204,8 +204,8 @@ run_test_cli() {
     ci_isolated_env
     mkdir -p "${CI_USER_BIN}"
     # Place a stub install so uninstall path runs without network
-    cp "${SCRIPT}" "${CI_USER_BIN}/gitlab-nginx"
-    chmod +x "${CI_USER_BIN}/gitlab-nginx"
+    cp "${SCRIPT}" "${CI_USER_BIN}/nginx-config"
+    chmod +x "${CI_USER_BIN}/nginx-config"
     _errf="${CI_HOME}/un-err.txt"
     _out=$(
         HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" GLOBAL_BIN="${CI_GLOBAL_BIN}" \
@@ -217,6 +217,56 @@ run_test_cli() {
     assert_contains "self-uninstall --json confirm_required code" "$_err" '"code":"confirm_required"'
     assert_contains "self-uninstall --json out_error type" "$_err" '"type":"out_error"'
     assert_not_contains "self-uninstall --json must not fake success cancel" "$_out$_err" "cancelled by user"
-    assert_file_exists "binary remains without --force" "${CI_USER_BIN}/gitlab-nginx"
+    assert_file_exists "binary remains without --force" "${CI_USER_BIN}/nginx-config"
     ci_cleanup_env
+
+    # --- TP-CLI-16: menu choice is not captured with $() of prompt_ask ---
+    if grep -nE '^[[:space:]]*[^#[:space:]].*(\$\(prompt_ask|`prompt_ask)' "${SCRIPT}" >/dev/null 2>&1; then
+        t_fail "TP-CLI-16 ship unit captures prompt_ask with \$()"
+    else
+        t_pass "TP-CLI-16 no \$(prompt_ask) in ship unit"
+    fi
+
+    # --- TP-CLI-17: help lists menu; header identity uses APP_NAME ---
+    _out=$(sh "${SCRIPT}" help 2>/dev/null)
+    assert_contains "TP-CLI-17 help lists menu" "$_out" "menu"
+    assert_contains "TP-CLI-17 help lists main alias" "$_out" "main"
+
+    # --- installed + off-TTY empty argv is already-installed, not hang ---
+    ci_isolated_env
+    mkdir -p "${CI_USER_BIN}"
+    cp "${SCRIPT}" "${CI_USER_BIN}/nginx-config"
+    chmod +x "${CI_USER_BIN}/nginx-config"
+    _errf="${CI_HOME}/empty-installed-err.txt"
+    _out=$(
+        HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" GLOBAL_BIN="${CI_GLOBAL_BIN}" \
+        sh "${SCRIPT}" </dev/null 2>"${_errf}"
+    )
+    _ec=$?
+    _err=$(cat "${_errf}" 2>/dev/null || true)
+    assert_eq "installed empty argv off-TTY exit 0" 0 "$_ec"
+    assert_contains "installed empty argv already installed" "${_out}${_err}" "already installed"
+    assert_file_exists "installed empty argv seeded cloudflared-protected-host" \
+        "${CI_HOME}/.local/nginx-config/profiles/cloudflared-protected-host.conf"
+    ci_cleanup_env
+
+    # --- PTY menu: invalid then Exit 9 retries (TP-NGINX-CONFIG-06 companion) ---
+    _pty_py="${TESTS_ROOT}/helpers/pty_feed.py"
+    if [ -f "${_pty_py}" ] && command -v python3 >/dev/null 2>&1; then
+        ci_isolated_env
+        mkdir -p "${CI_USER_BIN}"
+        cp "${SCRIPT}" "${CI_USER_BIN}/nginx-config"
+        chmod +x "${CI_USER_BIN}/nginx-config"
+        _out=$(
+            HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" GLOBAL_BIN="${CI_GLOBAL_BIN}" \
+            MENU_WAIT="Choice" MENU_INPUT=$'0\n9\n' \
+            python3 "${_pty_py}" sh "${SCRIPT}" menu 2>/dev/null || true
+        )
+        assert_contains "PTY menu prints domains row" "$_out" "domains"
+        assert_contains "PTY menu prints Exit 9" "$_out" "9. Exit"
+        assert_contains "PTY invalid choice retries" "$_out" "not a menu choice"
+        ci_cleanup_env
+    else
+        t_skip "PTY menu capture (python3 pty_feed missing)"
+    fi
 }

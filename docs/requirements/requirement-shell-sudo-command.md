@@ -5,10 +5,10 @@
 
 ## 1. Purpose
 
-This requirement is the **project Single Source of Truth for in-tool `sudo`** in `./gitlab-nginx`: every wrap, the **studied** allow table (binary, verb, operand, dest, NOPASSWD), and check-before-sudo.
+This requirement is the **project Single Source of Truth for in-tool `sudo`** in `./nginx-config`: every wrap, the **studied** allow table (binary, verb, operand, dest, NOPASSWD), and check-before-sudo.
 
 **Scope:** Call sites inside the ship unit that invoke `sudo`; argv they may pass; fail-closed when not permitted.  
-**Out of scope:** Writing `/etc/sudoers.d/*` fragments for `nginx-adm` / `gitlab-adm` (domain setup owns those files); operator typing `sudo gitlab-nginx run` in a shell (that is the human prefix, not an in-tool wrap).
+**Out of scope:** Writing `/etc/sudoers.d/*` fragments for `nginx-adm` / `nginx-adm` (domain setup owns those files); operator typing `sudo nginx-config run` in a shell (that is the human prefix, not an in-tool wrap).
 
 ### 1.1 Human-facing
 
@@ -16,7 +16,7 @@ This requirement is the **project Single Source of Truth for in-tool `sudo`** in
 
 | Box | Meaning | Example |
 |-----|---------|---------|
-| You / this login | You already started setup as root (`sudo gitlab-nginx run`) | root session |
+| You / this login | You already started setup as root (`sudo nginx-config run`) | root session |
 | The other role | Dedicated `nginx-adm` runs `nginx -t` via `sudo -u` | config test |
 | Not this file | The sudoers **files** created for those dedicated accounts | domain requirement |
 
@@ -24,16 +24,16 @@ This requirement is the **project Single Source of Truth for in-tool `sudo`** in
 |----------|----------|
 | `sudo systemctl stop nginx`; `sudo -u nginx-adm nginx -t` | Guessing `/etc/{{username}}/{{service}}` as dest |
 | Check before sudo | `sudo true` / `sudo mkdir` as grant proof |
-| Fail closed if wrap is needed and not root | Treating `sudo gitlab-nginx` in help text as an in-tool wrap |
+| Fail closed if wrap is needed and not root | Treating `sudo nginx-config` in help text as an in-tool wrap |
 
 | Surface | What you open | What for |
 |---------|---------------|----------|
-| `./gitlab-nginx` | program file | live `sudo` lines |
-| `sudo gitlab-nginx run` | command | host setup that reaches those lines |
+| `./nginx-config` | program file | live `sudo` lines |
+| `sudo nginx-config run` | command | host setup that reaches those lines |
 
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
-| Run full setup | The program may stop nginx via `systemctl` and test nginx **as** `nginx-adm`. It must not invent extra sudo argv. | `sudo gitlab-nginx run` |
+| Run full setup | The program may stop nginx via `systemctl` and test nginx **as** `nginx-adm`. It must not invent extra sudo argv. | `sudo nginx-config run` |
 
 ---
 
@@ -44,32 +44,30 @@ This requirement is the **project Single Source of Truth for in-tool `sudo`** in
 1. **MUST** treat every in-tool `sudo` as a wrap: check identity/need first; then invoke only an allow-listed argv.  
 2. **MUST NOT** probe `sudo true`, `sudo mkdir`, or `sudo cp` as proof of a grant.  
 3. **MUST NOT** guess dest or argv. Fill the allow table from ship-unit study (this product does not ship a `print-sudoers` CLI).  
-4. Help text that tells a **human** to type `sudo gitlab-nginx …` is **not** an in-tool wrap.
+4. Help text that tells a **human** to type `sudo nginx-config …` is **not** an in-tool wrap.
 
 ### 2.2 Studied sudo allow table (this product)
 
-Study evidence: `./gitlab-nginx` functions `stop_nginx_early` and the nginx test/start step of interactive `run` (grep `sudo systemctl` / `sudo -u nginx-adm`). No `print-sudoers` verb. No `/etc/sudoers.d/gitlab-nginx-*` fragment for the **invoking** operator — setup is already root. Dedicated-account fragments are domain-owned.
+Study evidence: `grep sudo ./nginx-config` (2026-09-13) — **no in-tool `sudo` wrap**. Host mutation uses `check_root` then direct `nginx -t` / `userdel` as the already-root invoker. Human prefixes `sudo nginx-config apply` / `sudo curl | sudo sh` are **not** wraps.
 
 | Binary | Verb / argv | Operand | Runas | Fragment dest | NOPASSWD? | This wrap? | Study evidence |
 |--------|-------------|---------|-------|---------------|-----------|------------|----------------|
-| `systemctl` (PATH) | `stop` | `nginx` | root (already) | none for this wrap — invoker is root | n/a | **yes** | `stop_nginx_early`: `sudo systemctl stop nginx` |
-| `nginx` (PATH) | `-t` | none | `nginx-adm` | `/etc/sudoers.d` fragment for `nginx-adm` (domain) | yes on that fragment when installed | **yes** | `sudo -u nginx-adm nginx -t` |
+| *(none)* | — | — | — | — | — | **no** | Ship unit does not invoke `sudo`; `apply` / `remove-lpu` require the process already be root |
 
-**MUST NOT** add `backup *`, restore, chmod of unrelated trees, or a harness dest `/etc/{{username}}/{{service}}` for these wraps.
+**MUST NOT** add guessed wraps (`systemctl`, `sudo -u nginx-adm nginx -t`) without a new disk study.
 
 ### 2.3 Check before sudo
 
 1. Domain mutating commands **MUST** `check_root` (or equivalent) before host mutation.  
-2. `sudo -u nginx-adm` **MUST** run only after that account exists (setup sequence).  
-3. Non-root `nginx-conf` / `run` / `remove-lpu` / `ssh-hostname` **MUST** fail closed without partial sudo.
+2. Non-root `apply` / `remove-lpu` **MUST** fail closed without partial sudo.
 
 ### 2.4 Implementation Notes (this project)
 
 | Item | Value |
 |------|--------|
-| `util_sudo` helper | **Gap** — live sites call `sudo` directly; future wrap **SHOULD** centralize without changing argv |
-| Operator prefix in help | Human `sudo gitlab-nginx run` — not a wrap |
-| Dedicated sudoers files | Owned by `requirement-domain-gitlab-nginx` (nginx-adm / gitlab-adm) |
+| `util_sudo` helper | **N/A** — no in-tool wrap |
+| Operator prefix in help | Human `sudo nginx-config apply` — not a wrap |
+| Dedicated sudoers files | `remove-lpu` may delete `/etc/sudoers.d/nginx-adm` (domain) |
 
 ## Under command line for normal user only
 
@@ -110,10 +108,10 @@ When this program runs on Termux, Git Bash, Windows Command Prompt, or the same 
 | Artifact | Role |
 |----------|------|
 | `docs/requirements/index.md` | Registry SSOT |
-| `docs/requirements/requirement-domain-gitlab-nginx.md` | Host setup + dedicated-account sudoers |
+| `docs/requirements/requirement-domain-nginx-config.md` | Host setup + dedicated-account sudoers |
 | `docs/requirements/requirement-shell-script-coding.md` | Coding-style pointer |
-| `./gitlab-nginx` | Implementation under test |
+| `./nginx-config` | Implementation under test |
 
 **Last Updated**: 2026-09-06  
-**Owner**: gitlab-nginx project maintainers  
+**Owner**: nginx-config project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; CIAO (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

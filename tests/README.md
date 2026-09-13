@@ -1,4 +1,4 @@
-# tests — gitlab-nginx
+# tests — nginx-config
 
 | File | Role |
 |------|------|
@@ -6,7 +6,7 @@
 | `helpers.sh` | Assertions + isolated HOME/USER_BIN/**GLOBAL_BIN** + local HTTP channel |
 | `test_cli.sh` | Type 0 CLI surface (TP-CLI-*) |
 | `test_install_lifecycle.sh` | Install / update / checksum / uninstall (TP-LC-*) |
-| `test_domain.sh` | Domain surface TP-GLN-* (RQ-DOMAIN-GITLAB-NGINX) |
+| `test_domain.sh` | Domain surface TP-NGINX-CONFIG-* (RQ-DOMAIN-NGINX-CONFIG) |
 
 ```bash
 ./tests/run.sh

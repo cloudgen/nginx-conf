@@ -4,11 +4,11 @@
 
 ## 1. Purpose
 
-This requirement is the **project Single Source of Truth** for **zero-argument (empty argv) dispatcher behavior** of the gitlab-nginx POSIX `/bin/sh` Type 0 CLI.
+This requirement is the **project Single Source of Truth** for **zero-argument (empty argv) dispatcher behavior** of the nginx-config POSIX `/bin/sh` Type 0 CLI.
 
 ### 1.0 Product type (template dual-model)
 
-| Field | Value for gitlab-nginx |
+| Field | Value for nginx-config |
 |-------|------------------------|
 | **Empty-argv type** | **Type O — Online-install** (not Type N) |
 | **Rationale** | Product advertises `curl … \| sh` one-liner install; empty argv is install-ensure, not help |
@@ -18,7 +18,7 @@ Type N (non-online-install → empty argv = help) does **not** apply to this pro
 It defines what happens when the tool is invoked with **no command and no flags**, including the classic one-liner:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Wilgat/gitlab-nginx/main/gitlab-nginx | /bin/sh
+curl -fsSL https://raw.githubusercontent.com/cloudgen/nginx-conf/main/nginx-config | /bin/sh
 ```
 
 Empty argv means **install-ensure** for three detect cases:
@@ -26,35 +26,36 @@ Empty argv means **install-ensure** for three detect cases:
 | Case | Meaning |
 |------|---------|
 | **Not installed** | No managed binary at the resolved install path(s) |
-| **Installed (local)** | Managed binary at the user path (`USER_BIN` / `${HOME}/.local/bin/gitlab-nginx`) |
-| **Installed (global)** | Managed binary at the global path (`GLOBAL_BIN` / `/usr/local/bin/gitlab-nginx`) |
+| **Installed (local)** | Managed binary at the user path (`USER_BIN` / `${HOME}/.local/bin/nginx-config`) |
+| **Installed (global)** | Managed binary at the global path (`GLOBAL_BIN` / `/usr/local/bin/nginx-config`) |
 
 **Scope:** Empty-argv routing, detect cases (global / local / absent), messages, force boundary, exit status, interaction with TTY / quiet / json.  
 **Out of scope (own requirements):** Full command catalog (`requirement-shell-cli-interface.md`); download/checksum detail (`requirement-shell-automatic-checksum.md`); full self-update/uninstall lifecycle (`requirement-shell-self-management.md`); output function catalog (`requirement-shell-output-requirements.md`); general idempotency matrix beyond empty-argv rows (`requirement-shell-idempotency.md`).
 
 ### 1.1 Human-facing
 
-**In one sentence:** Running `gitlab-nginx` with **no arguments** installs this program (or reports it is already installed). It does **not** show help and does **not** set up GitLab.
+**In one sentence:** Running `nginx-config` with **no arguments** installs this program the first time; on a real terminal after install it opens the numbered list.
 
 | Box | Meaning | Example |
 |-----|---------|---------|
-| You / this login | Pipe or empty argv means “put the program on my PATH” | `curl … \| sh` |
-| The other role | Root empty argv installs globally | `sudo curl … \| sudo sh` |
-| Not this file | `sudo gitlab-nginx run` (GitLab host setup) | domain requirement |
+| You / this login | Pipe means “put the program on my PATH”; later, empty argv on a terminal is the list | `curl … \| sh` then `nginx-config` |
+| The other role | Root empty argv installs globally when not installed | `sudo curl … \| sudo sh` |
+| Not this file | Which rows appear on the numbered list | `requirement-shell-cli-default-interaction` |
 
 | Includes | Excludes |
 |----------|----------|
-| Not installed → install; already installed → success no-op | Empty argv = help (Type N) |
-| TTY may confirm first install | Empty argv starting Certbot/GitLab |
+| Not installed → install; installed + script → already-installed; installed + TTY → numbered list | Empty argv = help (Type N); empty argv applying nginx |
+| TTY may confirm first install | Empty argv starting GitLab / Certbot |
 
 | Surface | What you open | What for |
 |---------|---------------|----------|
-| `gitlab-nginx` (no args) | command | install-ensure |
-| `gitlab-nginx help` | command | full usage (explicit only) |
+| `nginx-config` (no args, not installed) | command | install-ensure |
+| `nginx-config` (no args, installed, terminal) | command | numbered list |
+| `nginx-config help` | command | full usage (explicit only) |
 
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
-| First install via pipe | The one-liner has no extra words after `sh`. That empty argv is the install contract. | `curl -fsSL https://raw.githubusercontent.com/Wilgat/gitlab-nginx/main/gitlab-nginx \| sh` |
+| First install via pipe | The one-liner has no extra words after `sh`. That empty argv is the install contract. | `curl -fsSL https://raw.githubusercontent.com/cloudgen/nginx-conf/main/nginx-config \| sh` |
 
 ---
 
@@ -62,31 +63,36 @@ Empty argv means **install-ensure** for three detect cases:
 
 ### 2.1 Definitions (portable + project)
 
-| Term | Definition for gitlab-nginx |
+| Term | Definition for nginx-config |
 |------|----------------------------|
 | **Type O** | Online-install empty-argv product type: empty argv = install-ensure (this product). |
-| **Type N** | Non-online-install empty-argv type: empty argv = help — **out of scope** for gitlab-nginx. |
+| **Type N** | Non-online-install empty-argv type: empty argv = help — **out of scope** for nginx-config. |
 | **Empty argv / zero-arg** | `$# -eq 0` at entry to `app_main` (no command tokens; classic `curl \| sh` with no trailing args). |
-| **Install-ensure** | Converge to “managed `gitlab-nginx` binary present”; either perform install or success no-op. |
+| **Install-ensure** | Converge to “managed `nginx-config` binary present”; either perform install or success no-op. |
 | **Not installed** | `inst_is_installed` returns false (`inst_get_version` → `not installed`). |
-| **Installed (local)** | Executable at `${USER_BIN}/gitlab-nginx` (default `USER_BIN=${HOME}/.local/bin`) observed by install-detect SSOT. |
-| **Installed (global)** | Executable at `${GLOBAL_BIN}/gitlab-nginx` (default `GLOBAL_BIN=/usr/local/bin`) observed by install-detect SSOT. |
+| **Installed (local)** | Executable at `${USER_BIN}/nginx-config` (default `USER_BIN=${HOME}/.local/bin`) observed by install-detect SSOT. |
+| **Installed (global)** | Executable at `${GLOBAL_BIN}/nginx-config` (default `GLOBAL_BIN=/usr/local/bin`) observed by install-detect SSOT. |
 | **Force / reinstall** | `FORCE_REINSTALL=1` from `--force` (and related force wiring in `app_main`). Required only for deliberate replace, not for ensure. |
 
 ### 2.2 Single meaning of empty argv
 
-1. When **argv is empty**, `app_main` **MUST** run **install-ensure** — **MUST NOT** route to `app_help` / default `COMMAND=help`.  
-2. Explicit `gitlab-nginx help` remains the only full-usage path for help text.  
-3. Bootstrap **MUST** always call `app_main "$@"` so pipe one-liners reach this contract (no `${0##*/}` product-name gate).  
-4. Empty argv **MUST NOT** require the user to pass `install` or `install --force` merely because a previous ensure already succeeded.
+1. When **argv is empty** (no command token after flag parse) **and not installed**, `app_main` **MUST** run **install-ensure** — **MUST NOT** route to `app_help` / default `COMMAND=help`.  
+2. When **argv is empty**, **installed**, **TTY=1**, **JSON=0**, **QUIET=0**, **FORCE_REINSTALL=0**, `app_main` **MUST** route to the numbered list (`app_main_menu`). Topic owner: `requirement-shell-cli-default-interaction`.  
+3. When **argv is empty**, **installed**, and **TTY=0** (or quiet), `app_main` **MUST** run the already-installed success no-op — **MUST NOT** hang on the list.  
+4. `--json` with no command **MUST** be JSON help (empty-argv special case) even on a TTY.  
+5. Explicit `nginx-config help` remains a full-usage path.  
+6. Bootstrap **MUST** always call `app_main "$@"` so pipe one-liners reach this contract (no `${0##*/}` product-name gate).  
+7. Empty argv **MUST NOT** require the user to pass `install` or `install --force` merely because a previous ensure already succeeded.
 
 ### 2.3 Normative case matrix
 
 | Case | Detect condition (project) | Empty argv, `FORCE_REINSTALL=0` | Empty argv / install with force |
 |------|----------------------------|--------------------------------|---------------------------------|
 | **A. Not installed** | `inst_is_installed` false | Install into privilege-correct path (§2.4) | Same first-time install |
-| **B. Installed — local** | User binary present via detect SSOT | Success no-op: already installed; no re-download; **no help** | `inst_perform_install` re-download/replace (user path when non-root) |
-| **C. Installed — global** | Global binary present via detect SSOT | Success no-op: already installed; no re-download; **no help** | Re-download/replace (global path when root / global binary policy) |
+| **B. Installed — local, TTY=0** | User binary present | Success no-op: already installed; **no help**; **no menu** | `inst_perform_install` re-download/replace |
+| **B2. Installed — local, TTY=1** | User binary present | **Numbered list** (not help, not re-download) | Reinstall (do not open the list) |
+| **C. Installed — global, TTY=0** | Global binary present | Success no-op: already installed; **no help**; **no menu** | Re-download/replace |
+| **C2. Installed — global, TTY=1** | Global binary present | **Numbered list** | Reinstall (do not open the list) |
 
 **Already-installed rules (Cases B and C, force off):**
 
@@ -109,8 +115,8 @@ Empty argv means **install-ensure** for three detect cases:
 
 | Invoker | Target |
 |---------|--------|
-| root (`id -u` 0), e.g. `curl … \| sudo sh` | `${GLOBAL_BIN}/gitlab-nginx` → `/usr/local/bin/gitlab-nginx` |
-| non-root | `${USER_BIN}/gitlab-nginx` → `${HOME}/.local/bin/gitlab-nginx` |
+| root (`id -u` 0), e.g. `curl … \| sudo sh` | `${GLOBAL_BIN}/nginx-config` → `/usr/local/bin/nginx-config` |
+| non-root | `${USER_BIN}/nginx-config` → `${HOME}/.local/bin/nginx-config` |
 
 ### 2.5 Equivalence to explicit `install`
 
@@ -132,11 +138,11 @@ Empty argv means **install-ensure** for three detect cases:
 
 ### 2.7 Implementation Notes (this project)
 
-| Item | Value for gitlab-nginx |
+| Item | Value for nginx-config |
 |------|------------------------|
 | **Empty-argv type** | **Type O — Online-install** (install-ensure; not Type N help-default) |
-| **Product / binary** | `gitlab-nginx` (`APP_NAME`) |
-| **Ship unit** | Repo root `./gitlab-nginx` |
+| **Product / binary** | `nginx-config` (`APP_NAME`) |
+| **Ship unit** | Repo root `./nginx-config` |
 | **Dispatcher** | `app_main` — empty-argv block **before** flag/command parse default help |
 | **Install ensure** | `inst_perform_install` (quiet/json and already-installed no-op) |
 | **Friendly first install** | `inst_maybe_install` (TTY confirm / non-TTY auto) when not installed and not quiet/json |
@@ -237,7 +243,7 @@ This requirement is satisfied when all of the following hold:
 | `docs/requirements/requirement-shell-self-management.md` | self-update / uninstall (not empty-argv default) |
 | `docs/requirements/requirement-shell-output-requirements.md` | out_* / JSON purity |
 | `docs/requirements/requirement-shell-automatic-checksum.md` | Integrity on install download path |
-| Repo root `./gitlab-nginx` | Implementation (`app_main`, `inst_*`) |
+| Repo root `./nginx-config` | Implementation (`app_main`, `inst_*`) |
 | `tests/test_cli.sh`, `tests/test_install_lifecycle.sh` | Regression coverage |
 
 ---
@@ -255,7 +261,7 @@ This requirement is satisfied when all of the following hold:
 
 When this program runs on Termux, Git Bash, Windows Command Prompt, or the same class: **admin privilege** and **dedicated system user privilege** are unused. Do not wrap `sudo`, do not wrap Linux `apt`/`dnf`, do not create dedicated system users, and do not recommend `sudo curl | sh`. Git Bash and Windows cmd must not invoke Termux `pkg`.
 
-**This requirement:** empty argv still means install-ensure **for this login** (user-local path). It must not escalate or start GitLab host setup.
+**This requirement:** empty argv still means install-ensure **when not installed**. When installed on a real terminal it opens the numbered list. It must not escalate or apply nginx host conf.
 
 ## Design-time verification
 
@@ -268,6 +274,6 @@ When this program runs on Termux, Git Bash, Windows Command Prompt, or the same 
 **Map:** `reviews/test-plan.md`.
 
 **Last Updated**: 2026-09-06  
-**Owner**: gitlab-nginx project maintainers  
+**Owner**: nginx-config project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; CIAO Principles 1, 2, 3, 6, 16, 4, 20 (v2.10.2) (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).
 

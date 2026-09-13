@@ -1,16 +1,16 @@
-# Test plan — gitlab-nginx
+# Test plan — nginx-config
 
 Maps **portable TP families** (proof molds) and product domain cases to product-root `tests/`.
 
 | Field | Value |
 |-------|--------|
-| **Product** | gitlab-nginx |
-| **Ship unit** | `./gitlab-nginx` · `VERSION=2.5.3` |
-| **Companion** | `./gitlab-nginx.sha256` |
+| **Product** | nginx-config |
+| **Ship unit** | `./nginx-config` · `VERSION=1.0.0` |
+| **Companion** | `./nginx-config.sha256` |
 | **Suite entry** | `./tests/run.sh` |
-| **Live law** | **13** Active REQs — `docs/requirements/index.md` |
-| **Bootstrap origin** | selfmanaged 1.2.1 (A→B specialize) |
-| **Last update** | 2026-09-06 (2.5.3: live `app_help` SSOT; setup alias; no foreign help catalog) |
+| **Live law** | **15** Active REQs — `docs/requirements/index.md` |
+| **Bootstrap origin** | selfmanaged Type 0; GitLab features stripped from gitlab-nginx nginx DNA |
+| **Last update** | 2026-09-13 (1.0.0: profiles + 0-argv menu) |
 
 Status: **have** = automated · **todo** = needed · **n/a** = not applicable · **optional** = gated (root/host)
 
@@ -20,13 +20,11 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 
 | Family | Proof mold-ID | Suite file(s) | Primary product law |
 |--------|---------------|---------------|---------------------|
-| **TP-CLI** | `PM-SHELL-CLI-TEST-PLAN` | `tests/test_cli.sh` | RQ-SHELL-CLI-INTERFACE · RQ-SHELL-CLI-STORAGE · RQ-SHELL-OUTPUT-REQUIREMENTS |
+| **TP-CLI** | `PM-SHELL-CLI-TEST-PLAN` | `tests/test_cli.sh` | RQ-SHELL-CLI-INTERFACE · RQ-SHELL-CLI-STORAGE · RQ-SHELL-OUTPUT-REQUIREMENTS · RQ-SHELL-CLI-DEFAULT-INTERACTION |
 | **TP-LC** | `PM-INSTALL-LIFECYCLE-TEST-PLAN` | `tests/test_install_lifecycle.sh` | RQ-SHELL-SELF-MANAGEMENT · RQ-SHELL-IDEMPOTENCY · RQ-SHELL-AUTOMATIC-CHECKSUM |
 | **TP-CSUM** | `PM-CHECKSUM-TEST-PLAN` | CLI + lifecycle | RQ-SHELL-AUTOMATIC-CHECKSUM |
-| **TP-GLN** | `PM-DOMAIN-TEST-PLAN` (domain subject) | `tests/test_domain.sh` | **RQ-DOMAIN-GITLAB-NGINX** (`remove-lpu` catalog; host teardown optional/root) |
+| **TP-NGINX-CONFIG** | `PM-DOMAIN-TEST-PLAN` | `tests/test_domain.sh` | **RQ-DOMAIN-NGINX-CONFIG** · **RQ-NGINX-CONF** |
 | Umbrella | `PM-SHELL-CLI-SUITE-TEST-PLAN` | `tests/run.sh` | full Type 0 + domain surface |
-
-**Storage split:** shell **cache folder** + **persistence folder** / about fields → **RQ-SHELL-CLI-STORAGE** (TP-CLI). Domain host paths (`/etc/letsencrypt/*`) → **RQ-DOMAIN-GITLAB-NGINX** (TP-GLN about fields; host-mutating ops optional). Persistence folder is `${HOME}/.local/gitlab-nginx` — **not** `${HOME}/.local/bin` and **not** Let's Encrypt files.
 
 ---
 
@@ -34,11 +32,7 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 
 | Date | Result | Notes |
 |------|--------|-------|
-| 2026-08-11 | PASS=108 FAIL=25 | Initial suite; host `/usr/local/bin/gitlab-nginx` shadowed installs; `run` non-root false success |
-| 2026-08-11 | **PASS=133 FAIL=0 SKIP=0** | 2.3.1 + GLOBAL_BIN isolation + `check_root` on non-interactive run |
-| 2026-08-30 | **PASS=145 FAIL=0 SKIP=0** | Cache folder + persistence folder about fields (`RQ-SHELL-CLI-STORAGE` 1.1.0) |
-| 2026-09-06 | **PASS=154 FAIL=0 SKIP=0** | 2.5.2 human-facing law + TP-GLN-11…13 |
-| 2026-09-06 | **PASS=162 FAIL=0 SKIP=0** | 2.5.3 live `app_help`; setup alias; no foreign catalog |
+| 2026-09-13 | **PASS=194 FAIL=0 SKIP=0** | 1.0.0 nginx-config after GitLab strip |
 
 **How to re-baseline:** `cd` product root → `./tests/run.sh` → paste summary into this table when law/suite changes.
 
@@ -48,15 +42,17 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 
 | TP-ID | Intent | Status | Evidence |
 |-------|--------|--------|----------|
-| TP-CLI-01 | Syntax + companion digest | **have** | `sh -n`; `gitlab-nginx.sha256` |
+| TP-CLI-01 | Syntax + companion digest | **have** | `sh -n`; `nginx-config.sha256` |
 | TP-CLI-02 | Version human + JSON | **have** | app/version fields |
 | TP-CLI-03 | Help Type 0; no CHECKSUM | **have** | test_cli |
-| TP-CLI-04 | About JSON + cache/persistence fields | **have** | cache_preferred / cache_fallback / persistence_storage / effective_storage / storage_dir |
-| TP-CLI-05 | Cache + persistence isolation under HOME | **have** | GLOBAL_BIN + USER_BIN isolate; persistence under `${HOME}/.local/gitlab-nginx` |
+| TP-CLI-04 | About JSON + cache/persistence fields | **have** | cache_preferred / cache_fallback / persistence_storage |
+| TP-CLI-05 | Cache + persistence isolation under HOME | **have** | persistence under `${HOME}/.local/nginx-config` |
 | TP-CLI-06 | Unknown command fail-closed | **have** | exit 1 + out_error |
 | TP-CLI-07 | quiet / env -u HOME | **have** | test_cli |
 | TP-CLI-08 | Zero-arg failed install non-zero | **have** | bad SCRIPT_URL + isolate |
 | TP-CLI-09 | self-uninstall --json confirm_required | **have** | test_cli |
+| TP-CLI-16 | No `$()` of `prompt_ask` | **have** | grep ship unit |
+| TP-CLI-17 | Help lists menu; identity | **have** | test_cli |
 
 ---
 
@@ -66,7 +62,7 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 |-------|--------|--------|----------|
 | TP-LC-01 | install --json to USER_BIN | **have** | local channel |
 | TP-LC-02 | Idempotent re-install | **have** | already installed |
-| TP-LC-03 | Zero-arg Type O when installed | **have** | local + global path cases |
+| TP-LC-03 | Zero-arg Type O when installed (off-TTY) | **have** | local + global path cases |
 | TP-LC-04 | version-check schema | **have** | ver_check keys |
 | TP-LC-05 | self-update already-latest | **have** | lifecycle |
 | TP-LC-06 | Human companion transparency | **have** | PASS digest lines |
@@ -76,28 +72,18 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 
 ---
 
-## TP-GLN — Domain surface (`RQ-DOMAIN-GITLAB-NGINX`)
+## TP-NGINX-CONFIG — Domain surface
 
 | TP-ID | Intent | Status | Evidence |
 |-------|--------|--------|----------|
-| TP-GLN-01 | Help lists domain verbs + self-management; `setup` alias; no Java/timer catalog | **have** | run/setup/domains/email/nginx-conf/ssh-hostname/remove-lpu/--no-cloudflare |
-| TP-GLN-02 | Help --json notes domain | **have** | test_domain |
-| TP-GLN-03 | About domain fields | **have** | domains_file / email_file / domain_count |
-| TP-GLN-04 | Empty argv ≠ domain setup | **have** | Type O only; no certbot/GitLab text |
-| TP-GLN-05 | `domains` routed | **have** | not unknown |
-| TP-GLN-06 | `domains --json` type | **have** | JSON or honest permission |
-| TP-GLN-07 | `nginx-conf` non-root fail-closed | **have** | exit 1 + root message |
-| TP-GLN-08 | `run` non-root fail-closed | **have** | `check_root` (2.3.1) |
-| TP-GLN-09 | Full interactive host setup | **optional** | requires root + TTY + host packages |
-| TP-GLN-10 | `nginx-conf` regenerate on live host | **optional** | root + saved domains |
-| TP-GLN-11 | `email` routed | **have** | test_domain (not unknown) |
-| TP-GLN-12 | `ssh-hostname` non-root fail-closed | **have** | exit 1 + root message |
-| TP-GLN-13 | `remove-lpu` non-root fail-closed | **have** | exit 1 + root message |
-
----
-
-## Rules
-
-1. Closing a bug updates the matching TP to **have** only with a suite assertion (or documented static fix).  
-2. Host-mutating domain paths stay **optional** unless a safe CI harness is added.  
-3. Do not reverse-copy bootstrap selfmanaged suite without retargeting `APP_NAME` / channel / GLOBAL_BIN isolation.  
+| TP-NGINX-CONFIG-01 | Help lists work verbs; no GitLab | **have** | test_domain |
+| TP-NGINX-CONFIG-02 | Help JSON notes | **have** | test_domain |
+| TP-NGINX-CONFIG-03 | About JSON profile fields | **have** | test_domain |
+| TP-NGINX-CONFIG-04 | Empty argv ≠ apply | **have** | test_domain |
+| TP-NGINX-CONFIG-05 | Profile seed + placeholders | **have** | test_domain |
+| TP-NGINX-CONFIG-06 | Off-TTY menu = help | **have** | test_domain |
+| TP-NGINX-CONFIG-07 | nginx-conf missing operands fail-closed | **have** | test_domain |
+| TP-NGINX-CONFIG-08 | Render fills output, not catalog | **have** | test_domain |
+| TP-NGINX-CONFIG-09 | apply non-root fail-closed | **have** | test_domain |
+| TP-NGINX-CONFIG-10 | remove-lpu non-root fail-closed | **have** | test_domain |
+| TP-NGINX-CONFIG-11 | ssh-hostname unknown | **have** | test_domain |
