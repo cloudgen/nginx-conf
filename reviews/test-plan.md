@@ -10,7 +10,7 @@ Maps **portable TP families** (proof molds) and product domain cases to product-
 | **Suite entry** | `./tests/run.sh` |
 | **Live law** | **15** Active REQs — `docs/requirements/index.md` |
 | **Bootstrap origin** | selfmanaged Type 0; GitLab features stripped from gitlab-nginx nginx DNA |
-| **Last update** | 2026-09-13 (1.0.0: profiles + 0-argv menu) |
+| **Last update** | 2026-09-16 (main-menu review: TP-CLI-18/19 todo) |
 
 Status: **have** = automated · **todo** = needed · **n/a** = not applicable · **optional** = gated (root/host)
 
@@ -52,7 +52,9 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 | TP-CLI-08 | Zero-arg failed install non-zero | **have** | bad SCRIPT_URL + isolate |
 | TP-CLI-09 | self-uninstall --json confirm_required | **have** | test_cli |
 | TP-CLI-16 | No `$()` of `prompt_ask` | **have** | grep ship unit |
-| TP-CLI-17 | Help lists menu; identity | **have** | test_cli |
+| TP-CLI-17 | Help lists menu; identity | **have** (partial) | help lists `menu`/`main` only — **todo**: TTY header `APP_NAME(VERSION)` + **bold** short + *italic* long (2026-09-16 main-menu) |
+| TP-CLI-18 | After a valid leaf, reprint the **front** board (do not exit) | **todo** | PTY pick `2` then expect the numbered list again; 2026-09-16 Issue 1 |
+| TP-CLI-19 | Invalid TTY pick: `[ERROR]`, reprint this layer, stay (not TP-CLI-06) | **todo** | PTY today asserts retry text + `[WARN]` — must assert `out_error`; 2026-09-16 Issue 3 |
 
 ---
 
