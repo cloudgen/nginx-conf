@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-09-16
+
+### Fixed
+
+- Global shebang dest is **0755** (was `chmod +x` on `mktemp` → **0711**, so unprivileged `nginx-config` printed `/bin/sh: 0: cannot open /usr/local/bin/nginx-config: Permission denied`). Already-installed `install` and already-latest `self-update` heal leftover 0711.
+
 ## [1.0.0] - 2026-09-13
 
 ### Added
